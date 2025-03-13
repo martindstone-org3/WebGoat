@@ -45,7 +45,7 @@ jobs:
           echo "Pre-merge commit: $PRE_COMMIT"
           echo "New commit: $NEW_COMMIT"
           # List all commits between the old and new commit
-          COMMITS=$(git log --format="%H" ${PRE_COMMIT}..${NEW_COMMIT})
+          COMMITS=$(git log --no-merges --format="%H" ${PRE_COMMIT}..${NEW_COMMIT})
           echo "New commits:"
           echo "$COMMITS"
           for COMMIT in $COMMITS; do
@@ -53,7 +53,7 @@ jobs:
             # Extract the ISO8601 timestamp
             TIMESTAMP=$(git show -s --format=%cI $COMMIT)
             # Get the full commit message (flatten newlines)
-            MESSAGE=$(git show -s --format=%B $COMMIT | tr '\n' ' ')
+            MESSAGE=$(git show -s --format=%B $COMMIT | tr '\n' ' ' | xargs)
             # Get the short commit hash
             SHORT_HASH=$(git rev-parse --short $COMMIT)
             # Construct the commit URL
