@@ -67,7 +67,7 @@ jobs:
               "type": "DEPLOY",
               "url": "$COMMIT_URL"
             }
-            EOF
+          EOF
           done
 
       - name: Push changes to fork
