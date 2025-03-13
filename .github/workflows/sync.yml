@@ -56,10 +56,11 @@ jobs:
             MESSAGE=$(git show -s --format=%B $COMMIT | tr '\n' ' ' | xargs)
             SHORT_HASH=$(git rev-parse --short $COMMIT)
             COMMIT_URL="$REPO_URL/commit/$COMMIT"
-            echo "Sending notification for commit: $COMMIT"
-            curl -X POST -H "Content-Type: application/json" \
+            URL = "https://api.getcortexapp.com/api/v1/catalog/$CORTEX_ENTITY_TAG/custom-events"
+            echo "Sending notification for commit $SHORT_HASH to $URL"
+            curl -v -X POST -H "Content-Type: application/json" \
               -H "Authorization: Bearer $CORTEX_API_TOKEN" \
-              --data @- https://api.getcortexapp.com/api/v1/catalog/$CORTEX_ENTITY_TAG/custom-events <<EOF
+              --data @- $URL <<EOF
             {
               "description": "$SHORT_HASH",
               "timestamp": "$TIMESTAMP",
