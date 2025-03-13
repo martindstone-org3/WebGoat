@@ -38,31 +38,36 @@ jobs:
       - name: Send commit notifications
         env:
           CORTEX_API_TOKEN: ${{ secrets.CORTEX_API_TOKEN }}
+          CORTEX_ENTITY_TAG: ${{ secrets.CORTEX_ENTITY_TAG }}
         run: |
           REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
           PRE_COMMIT=$PRE_MERGE_HASH
           NEW_COMMIT=$(git rev-parse HEAD)
           echo "Pre-merge commit: $PRE_COMMIT"
           echo "New commit: $NEW_COMMIT"
-          # List all commits between the old and new commit
+          # List all non-merge commits between the old and new commit
           COMMITS=$(git log --no-merges --format="%H" ${PRE_COMMIT}..${NEW_COMMIT})
           echo "New commits:"
           echo "$COMMITS"
           for COMMIT in $COMMITS; do
             echo "Processing commit: $COMMIT"
-            # Extract the ISO8601 timestamp
+            # Extract commit details
             TIMESTAMP=$(git show -s --format=%cI $COMMIT)
-            # Get the full commit message (flatten newlines)
             MESSAGE=$(git show -s --format=%B $COMMIT | tr '\n' ' ' | xargs)
-            # Get the short commit hash
             SHORT_HASH=$(git rev-parse --short $COMMIT)
-            # Construct the commit URL
             COMMIT_URL="$REPO_URL/commit/$COMMIT"
             echo "Sending notification for commit: $COMMIT"
             curl -X POST -H "Content-Type: application/json" \
               -H "Authorization: Bearer $CORTEX_API_TOKEN" \
-              -d "{\"commit\": \"${COMMIT}\", \"short_hash\": \"${SHORT_HASH}\", \"timestamp\": \"${TIMESTAMP}\", \"message\": \"${MESSAGE}\", \"url\": \"${COMMIT_URL}\"}" \
-              https://webhook.site/e77128be-28c5-43e1-94eb-238e98e5dfad
+              --data @- https://api.getcortexapp.com/api/v1/catalog/$CORTEX_ENTITY_TAG/custom-events <<EOF
+            {
+              "description": "$SHORT_HASH",
+              "timestamp": "$TIMESTAMP",
+              "title": "$MESSAGE",
+              "type": "DEPLOY",
+              "url": "$COMMIT_URL"
+            }
+            EOF
           done
 
       - name: Push changes to fork
