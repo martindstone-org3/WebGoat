@@ -39,6 +39,7 @@ jobs:
         env:
           CORTEX_API_TOKEN: ${{ secrets.CORTEX_API_TOKEN }}
         run: |
+          REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
           PRE_COMMIT=$PRE_MERGE_HASH
           NEW_COMMIT=$(git rev-parse HEAD)
           echo "Pre-merge commit: $PRE_COMMIT"
@@ -48,13 +49,22 @@ jobs:
           echo "New commits:"
           echo "$COMMITS"
           for COMMIT in $COMMITS; do
+            echo "Processing commit: $COMMIT"
+            # Extract the ISO8601 timestamp
+            TIMESTAMP=$(git show -s --format=%cI $COMMIT)
+            # Get the full commit message (flatten newlines)
+            MESSAGE=$(git show -s --format=%B $COMMIT | tr '\n' ' ')
+            # Get the short commit hash
+            SHORT_HASH=$(git rev-parse --short $COMMIT)
+            # Construct the commit URL
+            COMMIT_URL="$REPO_URL/commit/$COMMIT"
             echo "Sending notification for commit: $COMMIT"
             curl -X POST -H "Content-Type: application/json" \
               -H "Authorization: Bearer $CORTEX_API_TOKEN" \
-              -d "{\"commit\": \"${COMMIT}\"}" \
+              -d "{\"commit\": \"${COMMIT}\", \"short_hash\": \"${SHORT_HASH}\", \"timestamp\": \"${TIMESTAMP}\", \"message\": \"${MESSAGE}\", \"url\": \"${COMMIT_URL}\"}" \
               https://webhook.site/e77128be-28c5-43e1-94eb-238e98e5dfad
           done
-        
+
       - name: Push changes to fork
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
