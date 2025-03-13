@@ -25,7 +25,7 @@ jobs:
         run: echo "PRE_MERGE_HASH=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Add upstream remote
-        run: git remote add upstream https://github.com/WebGoat/WebGoat.git
+        run: git remote add upstream https://github.com/martindstone/WebGoat.git
 
       - name: Fetch upstream changes
         run: git fetch upstream
